@@ -14,10 +14,10 @@ function postAd() {
     }
 
     // Get form values
-    const category = document.getElementById('category').value;
-    const title = document.getElementById('title').value;
-    const description = document.getElementById('description').value;
-    const price = document.getElementById('price').value;
+    const category = document.getElementById('category').value.trim();
+    const title = document.getElementById('title').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const price = document.getElementById('price').value.trim();
     const imageFile = document.getElementById('imageFile').files[0];
 
     // Validation
@@ -30,44 +30,49 @@ function postAd() {
         return;
     }
 
-    // Handle image
-    let imageURL = '';
-    if (imageFile) {
-        // For demo purposes, create object URL
-        imageURL = URL.createObjectURL(imageFile);
-    } else {
-        imageURL = 'https://via.placeholder.com/300x200?text=No+Image';
-    }
+    // Handle image conversion to base64 (async)
+    const reader = new FileReader();
 
-    // Get existing ads from localStorage
-    let ads = JSON.parse(localStorage.getItem("ads")) || [];
-    
-    // Create new ad
-    const newAd = {
-        category: category,
-        title: title,
-        description: description,
-        price: parseFloat(price).toFixed(2),
-        imageURL: imageURL,
-        id: Date.now(),
-        userEmail: loggedInUser.email
+    reader.onload = function(event) {
+        const imageURL = imageFile ? event.target.result : 'https://via.placeholder.com/300x200?text=No+Image';
+
+        // Get existing ads from localStorage
+        let ads = JSON.parse(localStorage.getItem("ads")) || [];
+
+        // Create new ad
+        const newAd = {
+            category,
+            title,
+            description,
+            price: parseFloat(price).toFixed(2),
+            imageURL,
+            id: Date.now(),
+            userEmail: loggedInUser.email
+        };
+
+        // Add to ads array
+        ads.push(newAd);
+
+        // Save to localStorage
+        localStorage.setItem("ads", JSON.stringify(ads));
+
+        // Show success message
+        Swal.fire({ 
+            icon: "success", 
+            title: "Ad Published!", 
+            text: "Your ad has been published successfully!" 
+        }).then(() => {
+            window.location.href = "index.html";
+        });
     };
-    
-    // Add to ads array
-    ads.push(newAd);
-    
-    // Save to localStorage
-    localStorage.setItem("ads", JSON.stringify(ads));
-    
-    // Show success message
-    Swal.fire({ 
-        icon: "success", 
-        title: "Ad Published!", 
-        text: "Your ad has been published successfully!" 
-    }).then(() => {
-        // Redirect to main page
-        window.location.href = "index.html";
-    });
+
+    // If there's an image file, convert it to Base64
+    if (imageFile) {
+        reader.readAsDataURL(imageFile);
+    } else {
+        // No image, use placeholder and continue directly
+        reader.onload({ target: { result: 'https://via.placeholder.com/300x200?text=No+Image' } });
+    }
 }
 
 // Check authentication on page load
